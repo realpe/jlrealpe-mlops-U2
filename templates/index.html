@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sistema de Diagnóstico Médico</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      width: 100%;
+      max-width: 520px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #1A56DB, #1E40AF);
+      color: white;
+      padding: 28px 32px;
+      text-align: center;
+    }
+
+    .card-header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+    .card-header p  { font-size: 0.9rem; opacity: 0.85; }
+
+    .card-body { padding: 32px 32px 16px 32px; }
+
+    .field { margin-bottom: 22px; }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .hint {
+      font-size: 0.78rem;
+      color: #6B7280;
+      font-weight: 400;
+      margin-left: 4px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #D1D5DB;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #111827;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    input[type="number"]:focus { border-color: #1A56DB; }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #1A56DB, #1E40AF);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 8px;
+    }
+
+    button[type="submit"]:hover { opacity: 0.9; }
+
+    /* ── Resultado ── */
+    .resultado-box {
+      margin-top: 24px;
+      border-radius: 10px;
+      padding: 20px 24px;
+      text-align: center;
+    }
+
+    .resultado-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .resultado-valor {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .NO-ENFERMO        { background:#ECFDF5; color:#065F46; border: 2px solid #6EE7B7; }
+    .ENFERMEDAD-LEVE   { background:#FFFBEB; color:#92400E; border: 2px solid #FCD34D; }
+    .ENFERMEDAD-AGUDA  { background:#FFF7ED; color:#C2410C; border: 2px solid #FDBA74; }
+    .ENFERMEDAD-CRÓNICA{ background:#FEF2F2; color:#991B1B; border: 2px solid #FCA5A5; }
+
+    .error-box {
+      margin-top: 20px;
+      background: #FEF2F2;
+      border: 1.5px solid #FCA5A5;
+      border-radius: 8px;
+      padding: 14px;
+      color: #991B1B;
+      font-size: 0.9rem;
+    }
+
+    .params-resumen {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: #6B7280;
+    }
+
+    hr { border: none; border-top: 1px solid #F3F4F6; margin: 24px 0; }
+
+    .api-note {
+      font-size: 0.78rem;
+      color: #9CA3AF;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    code {
+      background: #F3F4F6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    /* ── Footer Estilizado ── */
+    .card-footer {
+      background: #F9FAFB;
+      padding: 16px;
+      text-align: center;
+      border-top: 1px solid #F3F4F6;
+    }
+
+    .footer-text {
+      font-size: 0.75rem;
+      color: #6B7280;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <div class="card-header">
+    <h1>命 Sistema de Diagnóstico</h1>
+    <p>Ingrese los datos clínicos del paciente para obtener una predicción</p>
+  </div>
+
+  <div class="card-body">
+    <form method="POST" action="/predecir">
+
+      <div class="field">
+        <label>
+          Intensidad de síntomas
+          <span class="hint">(0 = ninguna, 10 = máxima)</span>
+        </label>
+        <input type="number" name="intensidad" min="0" max="10" step="0.1"
+               value="{{ intensidad or '' }}" placeholder="Ej: 7.5" required />
+      </div>
+
+      <div class="field">
+        <label>
+          Duración en días
+          <span class="hint">(cuántos días lleva con síntomas)</span>
+        </label>
+        <input type="number" name="duracion" min="0" step="1"
+               value="{{ duracion or '' }}" placeholder="Ej: 14" required />
+      </div>
+
+      <div class="field">
+        <label>
+          Número de síntomas distintos
+          <span class="hint">(fiebre, tos, dolor, etc.)</span>
+        </label>
+        <input type="number" name="num_sintomas" min="0" step="1"
+               value="{{ num_sintomas or '' }}" placeholder="Ej: 3" required />
+      </div>
+
+      <button type="submit">Obtener diagnóstico</button>
+    </form>
+
+    {% if error %}
+    <div class="error-box">⚠️ Error: {{ error }}</div>
+    {% endif %}
+
+    {% if resultado %}
+    {% set css_class = resultado | replace(" ", "-") %}
+    <div class="resultado-box {{ css_class }}">
+      <div class="resultado-label">Diagnóstico predicho</div>
+      <div class="resultado-valor">{{ resultado }}</div>
+      <div class="params-resumen">
+        Intensidad: {{ intensidad }} · Duración: {{ duracion }} días · Síntomas: {{ num_sintomas }}
+      </div>
+    </div>
+    {% endif %}
+
+    <hr />
+    <p class="api-note">
+      También disponible vía API REST en <code>POST /api/predecir</code>
+    </p>
+  </div>
+
+  <div class="card-footer">
+    <p class="footer-text">A00417017PO1 — Jose Luis Realpe M.</p>
+  </div>
+</div>
+</body>
+</html>
