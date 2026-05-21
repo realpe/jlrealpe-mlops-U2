@@ -54,4 +54,8 @@ def test_cinco_categorias():
         diagnosticar(5, 120, 3),
         diagnosticar(10, 100, 5),
     }
+<<<<<<< HEAD
     assert len(resultados) == 5
+=======
+    assert len(resultados) == 5
+>>>>>>> añadir-githup-actions
