@@ -1,0 +1,84 @@
+name: CI/CD Pipeline — Diagnóstico Médico
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  # ── JOB 1: Solo en Pull Request ──────────────────────────────────────────
+  ci-pull-request:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Comentar inicio CI/CD
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 CI/CD en acción. Ejecutando tareas…'
+            })
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: |
+          pip install flask gunicorn pytest
+          pip install -r requirements.txt
+
+      - name: Ejecutar pruebas unitarias
+        run: pytest tests/ -v
+
+      - name: Comentar éxito CI/CD
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ CI/CD terminado con éxito.'
+            })
+
+  # ── JOB 2: Solo en merge a main ──────────────────────────────────────────
+  cd-main:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Python y correr pruebas
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install flask gunicorn pytest && pip install -r requirements.txt
+      - run: pytest tests/ -v
+
+      - name: Login a GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construir y publicar imagen Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/diagnostico-medico:latest
