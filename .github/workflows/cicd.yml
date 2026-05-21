@@ -11,6 +11,9 @@ jobs:
   ci-pull-request:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:           # ← agregar esto
+      pull-requests: write # ← permite comentar en el PR
+      contents: read       # ← permite leer el código
 
     steps:
       - name: Checkout código
